@@ -38,8 +38,21 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'simplifiedCoursesApp_backend_api'
+    'simplifiedCoursesApp_backend_api',
+    'drf_spectacular',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Simplified Courses App',
+    'DESCRIPTION': 'Api restowe do obsługi backendu aplikacji webowej. Projekt ma zawierać implementację, z ciekawym podejściem, narzędzia do tworzenia kursów online, z możliwością strukturyzacji podobnej jak we wzorcu projektowym Kompozyt.',
+    'VERSION': '0.1.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -56,7 +69,7 @@ ROOT_URLCONF = 'simplifiedCoursesApp_backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

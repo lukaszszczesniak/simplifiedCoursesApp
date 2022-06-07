@@ -20,5 +20,5 @@ from simplifiedCoursesApp_backend_api import urls as simplifiedCoursesApp_backen
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
-    path('courses/', include(simplifiedCoursesApp_backend_urls)),
+    path('api/', include(simplifiedCoursesApp_backend_urls)),
 ]
