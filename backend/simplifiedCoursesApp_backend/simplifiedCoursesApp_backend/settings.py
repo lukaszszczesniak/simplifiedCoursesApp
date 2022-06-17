@@ -49,7 +49,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Simplified Courses App',
     'DESCRIPTION': 'Api restowe do obsługi backendu aplikacji webowej. Projekt ma zawierać implementację, z ciekawym podejściem, narzędzia do tworzenia kursów online, z możliwością strukturyzacji podobnej jak we wzorcu projektowym Kompozyt.',
-    'VERSION': '0.1.0',
+    'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
 
