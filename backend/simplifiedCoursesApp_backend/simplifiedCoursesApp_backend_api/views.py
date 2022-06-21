@@ -290,6 +290,7 @@ class CourseViewView(APIView):
             for courseHasLearnableComponentModel in course_model.coursehaslearnablecomponentmodel_set.all():
                 subcomponents.append(self.render_course(courseHasLearnableComponentModel.engaged_learnable_component))
             return CourseRenderedDto(
+                course_model.id,
                 course_model.name,
                 course_model.description,
                 subcomponents
@@ -298,6 +299,7 @@ class CourseViewView(APIView):
             try:
                 article_model: ArticleModel = learnable_component.articlemodel
                 return ArticleRenderedDto(
+                    article_model.id,
                     article_model.name,
                     article_model.contents
                 )

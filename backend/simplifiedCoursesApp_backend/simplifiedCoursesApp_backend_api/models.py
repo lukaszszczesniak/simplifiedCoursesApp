@@ -56,13 +56,15 @@ class ComponentType(Enum):
 
 
 class ArticleRenderedDto:
-    def __init__(self, name: str, contents: str):
+    def __init__(self, article_id: int, name: str, contents: str):
+        self.article_id = article_id
         self.name = name
         self.contents = contents
 
 
 class CourseRenderedDto:
-    def __init__(self, name: str, description: str, subcomponents):
+    def __init__(self, course_id: int,name: str, description: str, subcomponents):
+        self.course_id = course_id
         self.name = name
         self.description = description
         self.subcomponents = subcomponents
