@@ -1,9 +1,9 @@
+from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework import permissions
-from .models import CourseModel  # , TestModel
+from .models import CourseModel, LearnableComponentModel
 from .serializers import *
 
 
@@ -116,7 +116,7 @@ class CourseModelDetailApiView(APIView):
         request_serializer = CourseFormDtoSerializer(data=request.data)
         if request_serializer.is_valid():
             course_model_serializer = CourseModelSerializer(instance=course_model, data=request_serializer.data,
-                                                              partial=True)
+                                                            partial=True)
             if course_model_serializer.is_valid():
                 course_model_serializer.save()
                 response_serializer = CourseDtoSerializer(data=course_model_serializer.data)
@@ -135,103 +135,134 @@ class CourseModelDetailApiView(APIView):
             return Response("Course with given ID not found", status=status.HTTP_400_BAD_REQUEST)
         course_model.delete()
         return Response("Course deleted", status=status.HTTP_200_OK)
-#
-#
-# class TestModelListApiView(APIView):
-#     # add permission to check if user is authenticated
-#     permission_classes = [permissions.IsAuthenticated]
-#
-#     # 1. List all
-#     @extend_schema(request=None, responses=TestModelSerializer)
-#     def get(self, request, *args, **kwargs):
-#         '''
-#         List all the testModel items for given requested user
-#         '''
-#         testModels = TestModel.objects.filter(user=request.user.id)
-#         serializer = TestModelSerializer(testModels, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-#
-#     # 2. Create
-#     def post(self, request, *args, **kwargs):
-#         '''
-#         Create the TestModel with given testModel data
-#         '''
-#         data = {
-#             'task': request.data.get('task'),
-#             'completed': request.data.get('completed'),
-#             'user': request.user.id
-#         }
-#         serializer = TestModelSerializer(data=data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#
-#
-# class TestModelDetailApiView(APIView):
-#     # add permission to check if user is authenticated
-#     permission_classes = [permissions.IsAuthenticated]
-#
-#     def get_object(self, testmodel_id, user_id):
-#         '''
-#         Helper method to get the object with given testmodel_id, and user_id
-#         '''
-#         try:
-#             return TestModel.objects.get(id=testmodel_id, user=user_id)
-#         except TestModel.DoesNotExist:
-#             return None
-#
-#     # 3. Retrieve
-#     def get(self, request, testmodel_id, *args, **kwargs):
-#         '''
-#         Retrieves the TestModel with given testmodel_id
-#         '''
-#         testmodel_instance = self.get_object(testmodel_id, request.user.id)
-#         if not testmodel_instance:
-#             return Response(
-#                 {"res": "Object with testmodel id does not exists"},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-#
-#         serializer = TestModelSerializer(testmodel_instance)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-#
-#     # 4. Update
-#     def put(self, request, testmodel_id, *args, **kwargs):
-#         '''
-#         Updates the tedstmodel item with given testmodel_id if exists
-#         '''
-#         testmodel_instance = self.get_object(testmodel_id, request.user.id)
-#         if not testmodel_instance:
-#             return Response(
-#                 {"res": "Object with testmodel id does not exists"},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-#         data = {
-#             'task': request.data.get('task'),
-#             'completed': request.data.get('completed'),
-#             'user': request.user.id
-#         }
-#         serializer = TestModelSerializer(instance=testmodel_instance, data=data, partial=True)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#
-#     # 5. Delete
-#     def delete(self, request, testmodel_id, *args, **kwargs):
-#         '''
-#         Deletes the testmodel item with given testmodel_id if exists
-#         '''
-#         testmodel_instance = self.get_object(testmodel_id, request.user.id)
-#         if not testmodel_instance:
-#             return Response(
-#                 {"res": "Object with testmodel id does not exists"},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-#         testmodel_instance.delete()
-#         return Response(
-#             {"res": "Object deleted!"},
-#             status=status.HTTP_200_OK
-#         )
+
+
+class CourseSubcomponentsListApiView(APIView):
+    @staticmethod
+    def courseHasLearnableComponentModelQuerySetToResponseSerializer(
+            subcomponents_relations: QuerySet) -> SubcomponentDtoSerializer:
+        subcomponents_relations = sorted(subcomponents_relations,
+                                         key=lambda courseHasLearnableComponentModel:
+                                         courseHasLearnableComponentModel.order)
+        all_data = []
+        for subcomponent_relation in subcomponents_relations:
+            single_data = {
+                'id': subcomponent_relation.engaged_learnable_component_id
+            }
+            try:
+                subcomponent_relation.engaged_learnable_component.coursemodel
+                single_data['type'] = ComponentType.COURSE
+            except:
+                try:
+                    subcomponent_relation.engaged_learnable_component.articlemodel
+                    single_data['type'] = ComponentType.ARTICLE
+                except:
+                    raise Exception
+            all_data.append(single_data)
+        response_serializer = SubcomponentDtoSerializer(data=all_data, many=True)
+        return response_serializer
+
+    @extend_schema(responses=SubcomponentDtoSerializer(many=True))
+    def get(self, request, course_id, *args, **kwargs):
+        try:
+            course_model = CourseModel.objects.get(id=course_id)
+        except:
+            return Response("Course with given ID not found", status=status.HTTP_400_BAD_REQUEST)
+
+        subcomponents_relations = CourseHasLearnableComponentModel.objects.filter(engaging_course=course_id)
+        response_serializer = self.courseHasLearnableComponentModelQuerySetToResponseSerializer(subcomponents_relations)
+        if response_serializer.is_valid():
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+        return Response(response_serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @extend_schema(request=SubcomponentFormSerializer,
+                   responses={status.HTTP_200_OK: SubcomponentDtoSerializer(many=True),
+                              status.HTTP_400_BAD_REQUEST: None})
+    def post(self, request, course_id, *args, **kwargs):
+        request_serializer = SubcomponentFormSerializer(data=request.data)
+        if request_serializer.is_valid():
+            subcomponent_id = request_serializer.data['subcomponent_id']
+            try:
+                course_model = CourseModel.objects.get(id=course_id)
+            except:
+                return Response("Course with given ID not found", status=status.HTTP_400_BAD_REQUEST)
+            try:
+                subcomponent = LearnableComponentModel.objects.get(id=subcomponent_id)
+            except:
+                return Response("Component with given ID not found", status=status.HTTP_400_BAD_REQUEST)
+            if subcomponent_id == course_id:
+                return Response("Component cannot have itself!", status=status.HTTP_400_BAD_REQUEST)
+            try:
+                CourseHasLearnableComponentModel.objects.get(engaging_course_id=course_id,
+                                                             engaged_learnable_component_id=subcomponent_id)
+                return Response("Cannot duplicate child", status.HTTP_400_BAD_REQUEST)
+            except:
+                all_order_numbers = CourseHasLearnableComponentModel.objects.filter(
+                    engaging_course_id=course_id).values_list('order', flat=True)
+                last_order_number = 0
+                if len(all_order_numbers) != 0:
+                    last_order_number = max(all_order_numbers)
+                data = {
+                    'engaging_course': course_id,
+                    'engaged_learnable_component': subcomponent_id,
+                    'order': last_order_number + 1
+                }
+                course_has_learnable_component_serializer = CourseHasLearnableComponentSerializer(data=data)
+                if course_has_learnable_component_serializer.is_valid():
+                    course_has_learnable_component_serializer.save()
+                    subcomponents_relations = CourseHasLearnableComponentModel.objects.filter(engaging_course=course_id)
+                    response_serializer = self.courseHasLearnableComponentModelQuerySetToResponseSerializer(
+                        subcomponents_relations)
+                    if response_serializer.is_valid():
+                        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+                    return Response(response_serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                else:
+                    return Response(course_has_learnable_component_serializer.errors,
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            return Response(request_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CourseSubcomponentsDetailApiView(APIView):
+    @staticmethod
+    def courseHasLearnableComponentModelQuerySetToResponseSerializer(
+            subcomponents_relations: QuerySet) -> SubcomponentDtoSerializer:
+        subcomponents_relations = sorted(subcomponents_relations,
+                                         key=lambda courseHasLearnableComponentModel:
+                                         courseHasLearnableComponentModel.order)
+        all_data = []
+        for subcomponent_relation in subcomponents_relations:
+            single_data = {
+                'id': subcomponent_relation.engaged_learnable_component_id
+            }
+            try:
+                subcomponent_relation.engaged_learnable_component.coursemodel
+                single_data['type'] = ComponentType.COURSE
+            except:
+                try:
+                    subcomponent_relation.engaged_learnable_component.articlemodel
+                    single_data['type'] = ComponentType.ARTICLE
+                except:
+                    raise Exception
+            all_data.append(single_data)
+        response_serializer = SubcomponentDtoSerializer(data=all_data, many=True)
+        return response_serializer
+
+    def delete(self, request, course_id, subcomponent_id, *args, **kwargs):
+        try:
+            course_model = CourseModel.objects.get(id=course_id)
+        except:
+            return Response("Course with given ID not found", status=status.HTTP_400_BAD_REQUEST)
+        try:
+            relation = CourseHasLearnableComponentModel.objects.get(engaging_course_id=course_id,
+                                                                    engaged_learnable_component_id=subcomponent_id)
+            relation.delete()
+            subcomponents_relations = CourseHasLearnableComponentModel.objects.filter(engaging_course=course_id)
+            response_serializer = self.courseHasLearnableComponentModelQuerySetToResponseSerializer(
+                subcomponents_relations)
+            if response_serializer.is_valid():
+                return Response(response_serializer.data, status=status.HTTP_200_OK)
+            return Response(response_serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except:
+            return Response("Subcomponent with given ID not found", status.HTTP_400_BAD_REQUEST)

@@ -1,5 +1,9 @@
+from enum import Enum
+
+from rest_framework import serializers
 from django.db import models
 from django.contrib.auth.models import User
+
 
 #
 # class TestModel(models.Model):
@@ -43,3 +47,11 @@ class CourseHasLearnableComponentModel(models.Model):
                 fields=['engaging_course', 'order'],
                 name='course_has_component_order')
         ]
+
+
+class ComponentType(Enum):
+    COURSE = 1
+    ARTICLE = 2
+
+
+

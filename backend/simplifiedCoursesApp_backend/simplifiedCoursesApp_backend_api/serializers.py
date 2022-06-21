@@ -1,7 +1,8 @@
 from abc import ABC
 
 from rest_framework import serializers
-from .models import CourseModel, ArticleModel  # , TestModel
+from .models import CourseModel, ArticleModel, ComponentType, CourseHasLearnableComponentModel
+from rest_enumfield import EnumField
 
 
 # from .dtos import CourseFormDto, CourseDto
@@ -23,6 +24,12 @@ class ArticleModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArticleModel
         fields = ["id", "name", "updated", "contents"]
+
+
+class CourseHasLearnableComponentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseHasLearnableComponentModel
+        fields = ["engaging_course", "engaged_learnable_component", "order"]
 
 
 class CourseFormDtoSerializer(serializers.Serializer):
@@ -50,3 +57,12 @@ class ArticleDtoSerializer(serializers.Serializer):
     name = serializers.CharField()
     contents = serializers.CharField()
     updated = serializers.DateTimeField()
+
+
+class SubcomponentDtoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    type = EnumField(choices=ComponentType)
+
+
+class SubcomponentFormSerializer(serializers.Serializer):
+    subcomponent_id = serializers.IntegerField()
