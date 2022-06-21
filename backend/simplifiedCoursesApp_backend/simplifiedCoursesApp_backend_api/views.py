@@ -1,11 +1,13 @@
+import json
+
 from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import CourseModel, LearnableComponentModel
+from .models import CourseModel, LearnableComponentModel, ArticleRenderedDto, CourseRenderedDto
 from .serializers import *
-
+import jsonpickle
 
 class ArticleModelListApiView(APIView):
     @extend_schema(responses=ArticleDtoSerializer(many=True))
@@ -262,7 +264,42 @@ class CourseSubcomponentsDetailApiView(APIView):
             response_serializer = self.courseHasLearnableComponentModelQuerySetToResponseSerializer(
                 subcomponents_relations)
             if response_serializer.is_valid():
-                return Response(response_serializer.data, status=status.HTTP_200_OK)
+                return Response(response_serializer.data, status=status.HTTP_204_NO_CONTENT)
             return Response(response_serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except:
             return Response("Subcomponent with given ID not found", status.HTTP_400_BAD_REQUEST)
+
+
+class CourseViewView(APIView):
+
+    def get(self, request, course_id, *args, **kwargs):
+        course_model = None
+        try:
+            course_model = CourseModel.objects.get(id=course_id)
+        except:
+            return Response("Course with given ID not found", status=status.HTTP_400_BAD_REQUEST)
+        rendered_course = self.render_course(course_model)
+        pickler = jsonpickle.pickler.Pickler(make_refs=False, unpicklable=False)
+        return Response(pickler.flatten(obj=rendered_course), status=status.HTTP_200_OK, content_type="application/json")
+
+
+    def render_course(self, learnable_component: LearnableComponentModel):
+        try:
+            course_model: CourseModel = learnable_component.coursemodel
+            subcomponents = []
+            for courseHasLearnableComponentModel in course_model.coursehaslearnablecomponentmodel_set.all():
+                subcomponents.append(self.render_course(courseHasLearnableComponentModel.engaged_learnable_component))
+            return CourseRenderedDto(
+                course_model.name,
+                course_model.description,
+                subcomponents
+            )
+        except:
+            try:
+                article_model: ArticleModel = learnable_component.articlemodel
+                return ArticleRenderedDto(
+                    article_model.name,
+                    article_model.contents
+                )
+            except:
+                raise Exception("Invalid type od learnable component")

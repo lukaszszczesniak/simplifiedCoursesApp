@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List, Union
 
 from rest_framework import serializers
 from django.db import models
@@ -54,4 +55,14 @@ class ComponentType(Enum):
     ARTICLE = 2
 
 
+class ArticleRenderedDto:
+    def __init__(self, name: str, contents: str):
+        self.name = name
+        self.contents = contents
 
+
+class CourseRenderedDto:
+    def __init__(self, name: str, description: str, subcomponents):
+        self.name = name
+        self.description = description
+        self.subcomponents = subcomponents

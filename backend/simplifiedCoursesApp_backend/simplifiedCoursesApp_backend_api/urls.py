@@ -7,12 +7,14 @@ from .views import (
     ArticleModelDetailsApiView,
     CourseModelDetailApiView,
     CourseSubcomponentsListApiView,
-    CourseSubcomponentsDetailApiView
+    CourseSubcomponentsDetailApiView,
+    CourseViewView
 )
 
 urlpatterns = [
     path('courses/', CourseModelListApiView.as_view()),
     path('courses/<int:course_id>/', CourseModelDetailApiView.as_view()),
+    path('courses/<int:course_id>/rendered/', CourseViewView.as_view()),
     path('courses/<int:course_id>/subcomponents/', CourseSubcomponentsListApiView.as_view()),
     path('courses/<int:course_id>/subcomponents/<int:subcomponent_id>/', CourseSubcomponentsDetailApiView.as_view()),
     path('articles/', ArticleModelListApiView.as_view()),
