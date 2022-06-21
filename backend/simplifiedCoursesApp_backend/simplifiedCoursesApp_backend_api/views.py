@@ -1,5 +1,3 @@
-import json
-
 from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
@@ -8,6 +6,7 @@ from rest_framework import status
 from .models import CourseModel, LearnableComponentModel, ArticleRenderedDto, CourseRenderedDto
 from .serializers import *
 import jsonpickle
+
 
 class ArticleModelListApiView(APIView):
     @extend_schema(responses=ArticleDtoSerializer(many=True))
@@ -273,7 +272,6 @@ class CourseSubcomponentsDetailApiView(APIView):
 class CourseViewView(APIView):
 
     def get(self, request, course_id, *args, **kwargs):
-        course_model = None
         try:
             course_model = CourseModel.objects.get(id=course_id)
         except:

@@ -1,5 +1,4 @@
-from django.urls import re_path as url
-from django.urls import path, include
+from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from .views import (
     CourseModelListApiView,

@@ -1,19 +1,8 @@
-from abc import ABC
-
 from rest_framework import serializers
 from .models import CourseModel, ArticleModel, ComponentType, CourseHasLearnableComponentModel
 from rest_enumfield import EnumField
 
-
-# from .dtos import CourseFormDto, CourseDto
-
-
-# class TestModelSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = TestModel
-#         fields = ["task", "completed", "timestamp", "updated", "user"]
-#
-
+#ORM models serializers
 class CourseModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseModel
@@ -31,13 +20,10 @@ class CourseHasLearnableComponentSerializer(serializers.ModelSerializer):
         model = CourseHasLearnableComponentModel
         fields = ["engaging_course", "engaged_learnable_component", "order"]
 
-
+#DTO serializers
 class CourseFormDtoSerializer(serializers.Serializer):
     name = serializers.CharField(min_length=3, max_length=127)
     description = serializers.CharField(max_length=255, allow_blank=True, allow_null=True)
-
-    # def create(self, validated_data):
-    #     return CourseFormDto(**validated_data)
 
 
 class CourseDtoSerializer(serializers.Serializer):
